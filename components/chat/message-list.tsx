@@ -16,9 +16,7 @@ export function MessageList({
   if (messages.length === 0) {
     return (
       <div className="flex min-h-full items-center justify-center px-2 py-8 text-center">
-        <p className="text-sm text-zinc-500">
-          Send a message to start. Try &quot;Summarise the Q3 report&quot;.
-        </p>
+        <p className="text-sm text-zinc-500">Send a message to start.</p>
       </div>
     );
   }

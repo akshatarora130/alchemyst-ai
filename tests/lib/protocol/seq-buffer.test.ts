@@ -140,4 +140,21 @@ describe("seq buffer", () => {
     expect(result.ready).toEqual([token(11, "resumed")]);
     expect(result.state.lastProcessedSeq).toBe(11);
   });
+
+  it("accepts seq 1 again after a new conversation turn reset", () => {
+    let state = createSeqBuffer(0);
+
+    for (let seq = 1; seq <= 50; seq += 1) {
+      const result = ingestServerMessage(state, token(seq, `t${seq}`));
+      state = result.state;
+    }
+
+    expect(state.lastProcessedSeq).toBe(50);
+
+    state = createSeqBuffer(0);
+    const nextTurn = ingestServerMessage(state, token(1, "new turn"));
+
+    expect(nextTurn.ready).toEqual([token(1, "new turn")]);
+    expect(nextTurn.state.lastProcessedSeq).toBe(1);
+  });
 });

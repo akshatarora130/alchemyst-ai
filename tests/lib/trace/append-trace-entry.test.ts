@@ -8,14 +8,14 @@ describe("appendTraceEntry", () => {
       seq: 1,
       stream_id: "s1",
       text: "Hello ",
-    });
+    }, 1);
 
     entries = appendTraceEntry(entries, {
       type: "TOKEN",
       seq: 2,
       stream_id: "s1",
       text: "world",
-    });
+    }, 1);
 
     expect(entries).toHaveLength(1);
     expect(entries[0]?.kind).toBe("token_group");
@@ -31,7 +31,7 @@ describe("appendTraceEntry", () => {
       seq: 1,
       stream_id: "s1",
       text: "A",
-    });
+    }, 1);
 
     entries = appendTraceEntry(entries, {
       type: "TOOL_CALL",
@@ -40,14 +40,14 @@ describe("appendTraceEntry", () => {
       call_id: "tc1",
       tool_name: "lookup",
       args: {},
-    });
+    }, 1);
 
     entries = appendTraceEntry(entries, {
       type: "TOKEN",
       seq: 3,
       stream_id: "s1",
       text: "B",
-    });
+    }, 1);
 
     expect(entries).toHaveLength(3);
     expect(entries[0]?.kind).toBe("token_group");

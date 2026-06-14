@@ -4,6 +4,7 @@ import type { TraceEntry } from "@/types/trace";
 function appendTokenGroup(
   entries: TraceEntry[],
   message: Extract<ServerMessage, { type: "TOKEN" }>,
+  turnIndex: number,
   now: number,
 ): TraceEntry[] {
   const last = entries[entries.length - 1];
@@ -26,7 +27,7 @@ function appendTokenGroup(
     ...entries,
     {
       kind: "token_group",
-      id: `trace-token-${message.seq}`,
+      id: `trace-token-${turnIndex}-${message.seq}`,
       seq: message.seq,
       endSeq: message.seq,
       streamId: message.stream_id,
@@ -41,17 +42,18 @@ function appendTokenGroup(
 export function appendTraceEntry(
   entries: TraceEntry[],
   message: ServerMessage,
+  turnIndex: number,
   now = Date.now(),
 ): TraceEntry[] {
   switch (message.type) {
     case "TOKEN":
-      return appendTokenGroup(entries, message, now);
+      return appendTokenGroup(entries, message, turnIndex, now);
     case "TOOL_CALL":
       return [
         ...entries,
         {
           kind: "tool_call",
-          id: `trace-call-${message.call_id}`,
+          id: `trace-call-${turnIndex}-${message.call_id}`,
           seq: message.seq,
           callId: message.call_id,
           toolName: message.tool_name,
@@ -63,7 +65,7 @@ export function appendTraceEntry(
         ...entries,
         {
           kind: "tool_result",
-          id: `trace-result-${message.call_id}`,
+          id: `trace-result-${turnIndex}-${message.call_id}`,
           seq: message.seq,
           callId: message.call_id,
           streamId: message.stream_id,
@@ -74,7 +76,7 @@ export function appendTraceEntry(
         ...entries,
         {
           kind: "context_snapshot",
-          id: `trace-context-${message.seq}`,
+          id: `trace-context-${turnIndex}-${message.seq}`,
           seq: message.seq,
           contextId: message.context_id,
         },
@@ -84,7 +86,7 @@ export function appendTraceEntry(
         ...entries,
         {
           kind: "ping",
-          id: `trace-ping-${message.seq}`,
+          id: `trace-ping-${turnIndex}-${message.seq}`,
           seq: message.seq,
           challenge: message.challenge,
         },
@@ -94,7 +96,7 @@ export function appendTraceEntry(
         ...entries,
         {
           kind: "error",
-          id: `trace-error-${message.seq}`,
+          id: `trace-error-${turnIndex}-${message.seq}`,
           seq: message.seq,
           code: message.code,
           message: message.message,
@@ -105,7 +107,7 @@ export function appendTraceEntry(
         ...entries,
         {
           kind: "stream_end",
-          id: `trace-end-${message.seq}`,
+          id: `trace-end-${turnIndex}-${message.seq}`,
           seq: message.seq,
           streamId: message.stream_id,
         },

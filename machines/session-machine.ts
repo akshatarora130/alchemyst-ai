@@ -5,10 +5,15 @@ import {
   ingestServerMessage,
 } from "@/lib/protocol/seq-buffer";
 import {
+  setActiveContextId,
+  setContextStep,
+} from "@/lib/context/apply-context-snapshot";
+import {
   processPongSent,
   processReadyMessages,
 } from "@/lib/session/process-ready-messages";
 import { createUserChatMessage } from "@/types/chat";
+import { createInitialContextState } from "@/types/context";
 import { notifySeqProcessed } from "@/lib/websocket/message-bridge";
 import type { SessionContext, SessionEvent } from "@/machines/session-types";
 
@@ -25,6 +30,8 @@ export const sessionMachine = setup({
     seqBuffer: createSeqBuffer(0),
     traceEntries: [],
     selectedTraceId: null,
+    contextState: createInitialContextState(),
+    turnIndex: 0,
   },
   states: {
     idle: {
@@ -44,6 +51,8 @@ export const sessionMachine = setup({
             const processed = processReadyMessages(
               context.messages,
               context.traceEntries,
+              context.contextState,
+              context.turnIndex,
               ingested.ready,
             );
 
@@ -51,6 +60,7 @@ export const sessionMachine = setup({
               seqBuffer: ingested.state,
               messages: processed.messages,
               traceEntries: processed.traceEntries,
+              contextState: processed.contextState,
             };
           }),
         },
@@ -67,8 +77,7 @@ export const sessionMachine = setup({
                   createUserChatMessage(event.content),
                 ],
                 seqBuffer: createSeqBuffer(0),
-                traceEntries: [],
-                selectedTraceId: null,
+                turnIndex: context.turnIndex + 1,
               };
             }),
             () => {
@@ -91,6 +100,34 @@ export const sessionMachine = setup({
           actions: assign({
             selectedTraceId: ({ event }) =>
               event.type === "SELECT_TRACE" ? event.traceId : null,
+          }),
+        },
+        SET_CONTEXT_STEP: {
+          actions: assign(({ context, event }) => {
+            if (event.type !== "SET_CONTEXT_STEP") {
+              return {};
+            }
+
+            return {
+              contextState: setContextStep(
+                context.contextState,
+                event.stepIndex,
+              ),
+            };
+          }),
+        },
+        SET_ACTIVE_CONTEXT: {
+          actions: assign(({ context, event }) => {
+            if (event.type !== "SET_ACTIVE_CONTEXT") {
+              return {};
+            }
+
+            return {
+              contextState: setActiveContextId(
+                context.contextState,
+                event.contextId,
+              ),
+            };
           }),
         },
       },

@@ -6,6 +6,7 @@ import { useAgent } from "@/providers/agent-provider";
 import { findTraceIdByCallId } from "@/lib/trace/filter-trace-entries";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
+import { ChatQuickPrompts } from "@/components/chat/chat-quick-prompts";
 
 export function ChatPanel() {
   const {
@@ -50,7 +51,7 @@ export function ChatPanel() {
     >
       <div
         ref={scrollRef}
-        className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-5 sm:py-5"
       >
         <MessageList
           messages={messages}
@@ -58,6 +59,7 @@ export function ChatPanel() {
           onToolSelect={handleToolSelect}
         />
       </div>
+      <ChatQuickPrompts onSend={sendUserMessage} disabled={!canSend} />
       <ChatInput onSend={sendUserMessage} disabled={!canSend} />
     </Panel>
   );

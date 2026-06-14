@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useActorRef, useSelector } from "@xstate/react";
 import type { ConnectionStatus } from "@/types/connection";
+import type { ContextInspectorState } from "@/types/context";
 import type { ChatMessage } from "@/types/chat";
 import type { TraceEntry } from "@/types/trace";
 import {
@@ -31,8 +32,11 @@ interface AgentContextValue {
   messages: ChatMessage[];
   traceEntries: TraceEntry[];
   selectedTraceId: string | null;
+  contextState: ContextInspectorState;
   sendUserMessage: (content: string) => void;
   selectTrace: (traceId: string | null) => void;
+  setContextStep: (stepIndex: number) => void;
+  setActiveContext: (contextId: string) => void;
   connect: () => void;
   disconnect: () => void;
 }
@@ -64,6 +68,11 @@ export function AgentProvider({ children }: AgentProviderProps) {
   const selectedTraceId = useSelector(
     sessionRef,
     (snapshot) => snapshot.context.selectedTraceId,
+  );
+
+  const contextState = useSelector(
+    sessionRef,
+    (snapshot) => snapshot.context.contextState,
   );
 
   useEffect(() => {
@@ -121,14 +130,31 @@ export function AgentProvider({ children }: AgentProviderProps) {
     [sessionRef],
   );
 
+  const setContextStep = useCallback(
+    (stepIndex: number) => {
+      sessionRef.send({ type: "SET_CONTEXT_STEP", stepIndex });
+    },
+    [sessionRef],
+  );
+
+  const setActiveContext = useCallback(
+    (contextId: string) => {
+      sessionRef.send({ type: "SET_ACTIVE_CONTEXT", contextId });
+    },
+    [sessionRef],
+  );
+
   const value = useMemo(
     (): AgentContextValue => ({
       status,
       messages,
       traceEntries,
       selectedTraceId,
+      contextState,
       sendUserMessage,
       selectTrace,
+      setContextStep,
+      setActiveContext,
       connect,
       disconnect,
     }),
@@ -137,8 +163,11 @@ export function AgentProvider({ children }: AgentProviderProps) {
       messages,
       traceEntries,
       selectedTraceId,
+      contextState,
       sendUserMessage,
       selectTrace,
+      setContextStep,
+      setActiveContext,
       connect,
       disconnect,
     ],
