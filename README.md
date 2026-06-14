@@ -1,36 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Agent Console
 
-## Getting Started
+Next.js UI for the Alchemyst agent server — streaming chat, tool calls, protocol trace, context diffs, reconnect + chaos handling.
 
-First, run the development server:
+**Architecture:** UI → XState (`connectionMachine`, `sessionMachine`) → protocol libs (seq buffer, trace, diff) → WebSocket.
+
+![Connection state machine](./Screenshot%202026-06-14%20at%2017.21.32.png)
+
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# repo root — normal mode (drop --mode chaos for chaos)
+docker build -t agent-server ./agent-server
+docker run -p 4747:4747 --name agent-server agent-server
+
+cd alchemyst-ai && pnpm install && pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+→ [http://localhost:3000](http://localhost:3000) · WS: `ws://localhost:4747/ws`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Protocol log: `curl -s http://localhost:4747/log`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Chaos recording
 
-## Learn More
+**[2026-06-14 17-09-03.mp4](./2026-06-14%2017-09-03.mp4)** — drop/resume, out-of-order tokens, rapid tools, large context, corrupt PING.
 
-To learn more about Next.js, take a look at the following resources:
+## Dev
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`pnpm dev` · `pnpm build` · `pnpm test` · `pnpm lint`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Stack: Next.js 16, TS strict, Tailwind v4, XState v5, TanStack Virtual, microdiff.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Details: [DECISIONS.md](./DECISIONS.md)
