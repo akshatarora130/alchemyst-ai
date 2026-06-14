@@ -8,7 +8,7 @@ export function ToolCallCard({ segment }: ToolCallCardProps) {
   const argEntries = Object.entries(segment.args);
 
   return (
-    <div className="rounded-md border border-zinc-700 bg-zinc-800 p-3">
+    <div className="rounded-md border border-zinc-700 bg-zinc-800 p-4">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-medium text-sky-400">{segment.toolName}</p>
         <span

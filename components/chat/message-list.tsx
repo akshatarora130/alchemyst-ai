@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import type { ChatMessage } from "@/types/chat";
 import { AssistantMessage } from "@/components/chat/assistant-message";
 import { UserMessage } from "@/components/chat/user-message";
@@ -8,15 +7,9 @@ interface MessageListProps {
 }
 
 export function MessageList({ messages }: MessageListProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   if (messages.length === 0) {
     return (
-      <div className="flex h-full min-h-40 items-center justify-center px-4 text-center">
+      <div className="flex min-h-full items-center justify-center px-2 py-8 text-center">
         <p className="text-sm text-zinc-500">
           Send a message to start. Try &quot;Summarise the Q3 report&quot;.
         </p>
@@ -25,7 +18,7 @@ export function MessageList({ messages }: MessageListProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 pb-2">
       {messages.map((message) =>
         message.role === "user" ? (
           <UserMessage key={message.id} message={message} />
@@ -33,7 +26,6 @@ export function MessageList({ messages }: MessageListProps) {
           <AssistantMessage key={message.id} message={message} />
         ),
       )}
-      <div ref={bottomRef} />
     </div>
   );
 }

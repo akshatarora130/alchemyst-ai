@@ -5,6 +5,7 @@ interface PanelProps {
   description?: string;
   children?: ReactNode;
   className?: string;
+  bodyClassName?: string;
 }
 
 export function Panel({
@@ -12,6 +13,7 @@ export function Panel({
   description,
   children,
   className = "",
+  bodyClassName = "",
 }: PanelProps) {
   return (
     <section
@@ -23,7 +25,9 @@ export function Panel({
           <p className="mt-0.5 text-xs text-zinc-400">{description}</p>
         ) : null}
       </header>
-      <div className="min-h-0 flex-1 overflow-auto p-4">{children}</div>
+      <div className={`min-h-0 flex-1 overflow-auto p-4 ${bodyClassName}`}>
+        {children}
+      </div>
     </section>
   );
 }

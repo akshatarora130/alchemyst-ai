@@ -8,7 +8,7 @@ interface AssistantMessageProps {
 export function AssistantMessage({ message }: AssistantMessageProps) {
   return (
     <article className="flex justify-start">
-      <div className="max-w-[92%] space-y-2">
+      <div className="max-w-[92%] space-y-3">
         {message.segments.map((segment) => {
           if (segment.kind === "text") {
             if (segment.text.length === 0) {
@@ -18,7 +18,7 @@ export function AssistantMessage({ message }: AssistantMessageProps) {
             return (
               <p
                 key={segment.id}
-                className="whitespace-pre-wrap rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm leading-relaxed text-zinc-100"
+                className="whitespace-pre-wrap rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm leading-relaxed text-zinc-100"
               >
                 {segment.text}
               </p>
