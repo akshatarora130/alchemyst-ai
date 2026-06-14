@@ -38,6 +38,15 @@ function handleServerMessage({ event }: { event: ConnectionEvent }) {
   sendOnActiveSocket(serializeClientMessage(pong));
 }
 
+const socketInvoke = {
+  id: "socket",
+  src: "wsConnection" as const,
+  input: ({ context }: { context: ConnectionContext }): WsConnectionInput => ({
+    url: context.url,
+    resumeFromSeq: getResumeFromSeq(context),
+  }),
+};
+
 export const connectionMachine = setup({
   types: {
     context: {} as ConnectionContext,
@@ -66,67 +75,60 @@ export const connectionMachine = setup({
         shouldSendResume: false,
       }),
       on: {
-        CONNECT: "connecting",
+        CONNECT: "active",
       },
     },
-    connecting: {
-      invoke: {
-        id: "socket",
-        src: "wsConnection",
-        input: ({ context }): WsConnectionInput => ({
-          url: context.url,
-          resumeFromSeq: getResumeFromSeq(context),
-        }),
+    active: {
+      invoke: socketInvoke,
+      initial: "connecting",
+      states: {
+        connecting: {
+          on: {
+            WS_OPEN: {
+              target: "connected",
+              actions: assign({
+                reconnectAttempt: 0,
+                shouldSendResume: false,
+              }),
+            },
+            WS_CLOSE: {
+              target: "#connection.reconnecting",
+              actions: assign({
+                reconnectAttempt: ({ context }) => context.reconnectAttempt + 1,
+              }),
+            },
+            WS_ERROR: {
+              target: "#connection.reconnecting",
+              actions: assign({
+                reconnectAttempt: ({ context }) => context.reconnectAttempt + 1,
+              }),
+            },
+          },
+        },
+        connected: {
+          on: {
+            WS_MESSAGE: {
+              actions: handleServerMessage,
+            },
+            WS_CLOSE: {
+              target: "#connection.reconnecting",
+              actions: assign({
+                shouldSendResume: true,
+                reconnectAttempt: 0,
+              }),
+            },
+            WS_ERROR: {
+              target: "#connection.reconnecting",
+              actions: assign({
+                shouldSendResume: true,
+                reconnectAttempt: 0,
+              }),
+            },
+          },
+        },
       },
       on: {
-        WS_OPEN: {
-          target: "connected",
-          actions: assign({
-            reconnectAttempt: 0,
-            shouldSendResume: false,
-          }),
-        },
-        WS_CLOSE: {
-          target: "reconnecting",
-          actions: assign({
-            reconnectAttempt: ({ context }) => context.reconnectAttempt + 1,
-          }),
-        },
-        WS_ERROR: {
-          target: "reconnecting",
-          actions: assign({
-            reconnectAttempt: ({ context }) => context.reconnectAttempt + 1,
-          }),
-        },
         DISCONNECT: "disconnected",
-      },
-    },
-    connected: {
-      on: {
-        WS_MESSAGE: {
-          actions: handleServerMessage,
-        },
-        WS_CLOSE: {
-          target: "reconnecting",
-          actions: assign({
-            shouldSendResume: true,
-            reconnectAttempt: 0,
-          }),
-        },
-        WS_ERROR: {
-          target: "reconnecting",
-          actions: assign({
-            shouldSendResume: true,
-            reconnectAttempt: 0,
-          }),
-        },
-        DISCONNECT: "disconnected",
-        UPDATE_LAST_SEQ: {
-          actions: assign({
-            lastProcessedSeq: ({ event }) =>
-              event.type === "UPDATE_LAST_SEQ" ? event.seq : 0,
-          }),
-        },
       },
     },
     reconnecting: {
@@ -134,41 +136,9 @@ export const connectionMachine = setup({
       states: {
         waiting: {
           after: {
-            reconnectDelay: "connecting",
+            reconnectDelay: "#connection.active.connecting",
           },
           on: {
-            DISCONNECT: "#connection.disconnected",
-          },
-        },
-        connecting: {
-          invoke: {
-            id: "socket",
-            src: "wsConnection",
-            input: ({ context }): WsConnectionInput => ({
-              url: context.url,
-              resumeFromSeq: getResumeFromSeq(context),
-            }),
-          },
-          on: {
-            WS_OPEN: {
-              target: "#connection.connected",
-              actions: assign({
-                reconnectAttempt: 0,
-                shouldSendResume: false,
-              }),
-            },
-            WS_CLOSE: {
-              target: "waiting",
-              actions: assign({
-                reconnectAttempt: ({ context }) => context.reconnectAttempt + 1,
-              }),
-            },
-            WS_ERROR: {
-              target: "waiting",
-              actions: assign({
-                reconnectAttempt: ({ context }) => context.reconnectAttempt + 1,
-              }),
-            },
             DISCONNECT: "#connection.disconnected",
           },
         },

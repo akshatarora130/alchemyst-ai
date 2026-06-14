@@ -5,10 +5,9 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   type ReactNode,
 } from "react";
-import { useActor } from "@xstate/react";
+import { useActorRef, useSelector } from "@xstate/react";
 import type { ConnectionStatus } from "@/types/connection";
 import type { ClientMessage } from "@/types/protocol";
 import { serializeClientMessage } from "@/lib/protocol/client-messages";
@@ -35,21 +34,32 @@ export function ConnectionProvider({
   children,
   autoConnect = true,
 }: ConnectionProviderProps) {
-  const [snapshot, send] = useActor(connectionMachine);
+  const actorRef = useActorRef(connectionMachine);
+  const status = useSelector(actorRef, (snapshot) =>
+    mapMachineStateToStatus(snapshot.value),
+  );
+
+  useEffect(() => {
+    actorRef.start();
+
+    return () => {
+      actorRef.stop();
+    };
+  }, [actorRef]);
 
   useEffect(() => {
     if (autoConnect) {
-      send({ type: "CONNECT" });
+      actorRef.send({ type: "CONNECT" });
     }
-  }, [autoConnect, send]);
+  }, [autoConnect, actorRef]);
 
   const connect = useCallback(() => {
-    send({ type: "CONNECT" });
-  }, [send]);
+    actorRef.send({ type: "CONNECT" });
+  }, [actorRef]);
 
   const disconnect = useCallback(() => {
-    send({ type: "DISCONNECT" });
-  }, [send]);
+    actorRef.send({ type: "DISCONNECT" });
+  }, [actorRef]);
 
   const sendMessage = useCallback((message: ClientMessage) => {
     sendOnActiveSocket(serializeClientMessage(message));
@@ -57,21 +67,18 @@ export function ConnectionProvider({
 
   const updateLastProcessedSeq = useCallback(
     (seq: number) => {
-      send({ type: "UPDATE_LAST_SEQ", seq });
+      actorRef.send({ type: "UPDATE_LAST_SEQ", seq });
     },
-    [send],
+    [actorRef],
   );
 
-  const value = useMemo(
-    (): ConnectionContextValue => ({
-      status: mapMachineStateToStatus(snapshot.value),
-      connect,
-      disconnect,
-      sendMessage,
-      updateLastProcessedSeq,
-    }),
-    [snapshot.value, connect, disconnect, sendMessage, updateLastProcessedSeq],
-  );
+  const value: ConnectionContextValue = {
+    status,
+    connect,
+    disconnect,
+    sendMessage,
+    updateLastProcessedSeq,
+  };
 
   return (
     <ConnectionContext.Provider value={value}>

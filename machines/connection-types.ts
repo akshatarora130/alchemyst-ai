@@ -14,7 +14,6 @@ export type ConnectionEvent =
   | { type: "WS_CLOSE" }
   | { type: "WS_ERROR" }
   | { type: "WS_MESSAGE"; raw: string }
-  | { type: "RETRY" }
   | { type: "UPDATE_LAST_SEQ"; seq: number };
 
 export interface WsConnectionInput {
@@ -35,16 +34,12 @@ export function mapMachineStateToStatus(
     return "disconnected";
   }
 
-  if (stateValue === "connecting") {
-    return "connecting";
-  }
-
-  if (stateValue === "connected") {
-    return "connected";
-  }
-
   if (typeof stateValue === "object" && "reconnecting" in stateValue) {
     return "reconnecting";
+  }
+
+  if (typeof stateValue === "object" && "active" in stateValue) {
+    return stateValue.active === "connected" ? "connected" : "connecting";
   }
 
   return "disconnected";
