@@ -4,9 +4,15 @@ import { UserMessage } from "@/components/chat/user-message";
 
 interface MessageListProps {
   messages: ChatMessage[];
+  highlightedCallId: string | null;
+  onToolSelect: (callId: string) => void;
 }
 
-export function MessageList({ messages }: MessageListProps) {
+export function MessageList({
+  messages,
+  highlightedCallId,
+  onToolSelect,
+}: MessageListProps) {
   if (messages.length === 0) {
     return (
       <div className="flex min-h-full items-center justify-center px-2 py-8 text-center">
@@ -23,7 +29,12 @@ export function MessageList({ messages }: MessageListProps) {
         message.role === "user" ? (
           <UserMessage key={message.id} message={message} />
         ) : (
-          <AssistantMessage key={message.id} message={message} />
+          <AssistantMessage
+            key={message.id}
+            message={message}
+            highlightedCallId={highlightedCallId}
+            onToolSelect={onToolSelect}
+          />
         ),
       )}
     </div>

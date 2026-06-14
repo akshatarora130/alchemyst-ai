@@ -5,7 +5,10 @@ import { serializeClientMessage } from "@/lib/protocol/client-messages";
 import { parseServerMessage } from "@/lib/protocol/parse-server-message";
 import { createPongForPing } from "@/lib/websocket/ping-handler";
 import { sendOnActiveSocket } from "@/lib/websocket/active-socket";
-import { forwardAgentMessage } from "@/lib/websocket/message-bridge";
+import {
+  forwardAgentMessage,
+  notifyPongSent,
+} from "@/lib/websocket/message-bridge";
 import type {
   ConnectionContext,
   ConnectionEvent,
@@ -35,6 +38,7 @@ function handleServerMessage({ event }: { event: ConnectionEvent }) {
     const pong = createPongForPing(message);
     if (pong) {
       sendOnActiveSocket(serializeClientMessage(pong));
+      notifyPongSent(pong.echo);
     }
   }
 

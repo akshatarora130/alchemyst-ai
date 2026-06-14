@@ -2,13 +2,35 @@ import type { ToolSegment } from "@/types/chat";
 
 interface ToolCallCardProps {
   segment: ToolSegment;
+  highlighted?: boolean;
+  onSelect?: () => void;
 }
 
-export function ToolCallCard({ segment }: ToolCallCardProps) {
+export function ToolCallCard({
+  segment,
+  highlighted = false,
+  onSelect,
+}: ToolCallCardProps) {
   const argEntries = Object.entries(segment.args);
 
   return (
-    <div className="rounded-md border border-zinc-700 bg-zinc-800 p-4">
+    <div
+      data-call-id={segment.callId}
+      role={onSelect ? "button" : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (onSelect && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      className={`rounded-md border bg-zinc-800 p-4 transition-colors ${
+        highlighted
+          ? "border-sky-500 ring-1 ring-sky-500/40"
+          : "border-zinc-700"
+      } ${onSelect ? "cursor-pointer hover:border-zinc-600" : ""}`}
+    >
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-medium text-sky-400">{segment.toolName}</p>
         <span

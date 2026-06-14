@@ -1,40 +1,16 @@
 import { assign, setup } from "xstate";
-import {
-  createToolAck,
-  serializeClientMessage,
-} from "@/lib/protocol/client-messages";
 import { parseServerMessage } from "@/lib/protocol/parse-server-message";
 import {
   createSeqBuffer,
   ingestServerMessage,
 } from "@/lib/protocol/seq-buffer";
-import { applyServerEvent } from "@/lib/session/apply-server-event";
-import { sendOnActiveSocket } from "@/lib/websocket/active-socket";
+import {
+  processPongSent,
+  processReadyMessages,
+} from "@/lib/session/process-ready-messages";
+import { createUserChatMessage } from "@/types/chat";
 import { notifySeqProcessed } from "@/lib/websocket/message-bridge";
 import type { SessionContext, SessionEvent } from "@/machines/session-types";
-import { createUserChatMessage } from "@/types/chat";
-
-function processReadyMessages(
-  messages: SessionContext["messages"],
-  ready: ReturnType<typeof ingestServerMessage>["ready"],
-): SessionContext["messages"] {
-  let nextMessages = messages;
-
-  for (const message of ready) {
-    const result = applyServerEvent(nextMessages, message);
-    nextMessages = result.messages;
-
-    if (result.toolAckCallId) {
-      sendOnActiveSocket(
-        serializeClientMessage(createToolAck(result.toolAckCallId)),
-      );
-    }
-
-    notifySeqProcessed(message.seq);
-  }
-
-  return nextMessages;
-}
 
 export const sessionMachine = setup({
   types: {
@@ -47,6 +23,8 @@ export const sessionMachine = setup({
   context: {
     messages: [],
     seqBuffer: createSeqBuffer(0),
+    traceEntries: [],
+    selectedTraceId: null,
   },
   states: {
     idle: {
@@ -63,10 +41,16 @@ export const sessionMachine = setup({
             }
 
             const ingested = ingestServerMessage(context.seqBuffer, parsed);
+            const processed = processReadyMessages(
+              context.messages,
+              context.traceEntries,
+              ingested.ready,
+            );
 
             return {
               seqBuffer: ingested.state,
-              messages: processReadyMessages(context.messages, ingested.ready),
+              messages: processed.messages,
+              traceEntries: processed.traceEntries,
             };
           }),
         },
@@ -83,12 +67,31 @@ export const sessionMachine = setup({
                   createUserChatMessage(event.content),
                 ],
                 seqBuffer: createSeqBuffer(0),
+                traceEntries: [],
+                selectedTraceId: null,
               };
             }),
             () => {
               notifySeqProcessed(0);
             },
           ],
+        },
+        PONG_SENT: {
+          actions: assign(({ context, event }) => {
+            if (event.type !== "PONG_SENT") {
+              return {};
+            }
+
+            return {
+              traceEntries: processPongSent(context.traceEntries, event.echo),
+            };
+          }),
+        },
+        SELECT_TRACE: {
+          actions: assign({
+            selectedTraceId: ({ event }) =>
+              event.type === "SELECT_TRACE" ? event.traceId : null,
+          }),
         },
       },
     },

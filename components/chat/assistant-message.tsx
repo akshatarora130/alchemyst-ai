@@ -3,9 +3,15 @@ import { ToolCallCard } from "@/components/chat/tool-call-card";
 
 interface AssistantMessageProps {
   message: AssistantChatMessage;
+  highlightedCallId: string | null;
+  onToolSelect: (callId: string) => void;
 }
 
-export function AssistantMessage({ message }: AssistantMessageProps) {
+export function AssistantMessage({
+  message,
+  highlightedCallId,
+  onToolSelect,
+}: AssistantMessageProps) {
   return (
     <article className="flex justify-start">
       <div className="max-w-[92%] space-y-3">
@@ -18,6 +24,7 @@ export function AssistantMessage({ message }: AssistantMessageProps) {
             return (
               <p
                 key={segment.id}
+                data-stream-id={message.streamId}
                 className="whitespace-pre-wrap rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm leading-relaxed text-zinc-100"
               >
                 {segment.text}
@@ -25,7 +32,14 @@ export function AssistantMessage({ message }: AssistantMessageProps) {
             );
           }
 
-          return <ToolCallCard key={segment.id} segment={segment} />;
+          return (
+            <ToolCallCard
+              key={segment.id}
+              segment={segment}
+              highlighted={highlightedCallId === segment.callId}
+              onSelect={() => onToolSelect(segment.callId)}
+            />
+          );
         })}
 
         {!message.isComplete ? (

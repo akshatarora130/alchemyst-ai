@@ -5,11 +5,13 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import { useActorRef, useSelector } from "@xstate/react";
 import type { ConnectionStatus } from "@/types/connection";
 import type { ChatMessage } from "@/types/chat";
+import type { TraceEntry } from "@/types/trace";
 import {
   createUserMessage,
   serializeClientMessage,
@@ -17,6 +19,7 @@ import {
 import { sendOnActiveSocket } from "@/lib/websocket/active-socket";
 import {
   setAgentMessageHandler,
+  setPongSentHandler,
   setSeqProcessedHandler,
 } from "@/lib/websocket/message-bridge";
 import { connectionMachine } from "@/machines/connection-machine";
@@ -26,7 +29,10 @@ import { sessionMachine } from "@/machines/session-machine";
 interface AgentContextValue {
   status: ConnectionStatus;
   messages: ChatMessage[];
+  traceEntries: TraceEntry[];
+  selectedTraceId: string | null;
   sendUserMessage: (content: string) => void;
+  selectTrace: (traceId: string | null) => void;
   connect: () => void;
   disconnect: () => void;
 }
@@ -50,6 +56,16 @@ export function AgentProvider({ children }: AgentProviderProps) {
     (snapshot) => snapshot.context.messages,
   );
 
+  const traceEntries = useSelector(
+    sessionRef,
+    (snapshot) => snapshot.context.traceEntries,
+  );
+
+  const selectedTraceId = useSelector(
+    sessionRef,
+    (snapshot) => snapshot.context.selectedTraceId,
+  );
+
   useEffect(() => {
     connectionRef.start();
     sessionRef.start();
@@ -62,11 +78,16 @@ export function AgentProvider({ children }: AgentProviderProps) {
       connectionRef.send({ type: "UPDATE_LAST_SEQ", seq });
     });
 
+    setPongSentHandler((echo) => {
+      sessionRef.send({ type: "PONG_SENT", echo });
+    });
+
     connectionRef.send({ type: "CONNECT" });
 
     return () => {
       setAgentMessageHandler(null);
       setSeqProcessedHandler(null);
+      setPongSentHandler(null);
       connectionRef.stop();
       sessionRef.stop();
     };
@@ -93,13 +114,35 @@ export function AgentProvider({ children }: AgentProviderProps) {
     [sessionRef],
   );
 
-  const value: AgentContextValue = {
-    status,
-    messages,
-    sendUserMessage,
-    connect,
-    disconnect,
-  };
+  const selectTrace = useCallback(
+    (traceId: string | null) => {
+      sessionRef.send({ type: "SELECT_TRACE", traceId });
+    },
+    [sessionRef],
+  );
+
+  const value = useMemo(
+    (): AgentContextValue => ({
+      status,
+      messages,
+      traceEntries,
+      selectedTraceId,
+      sendUserMessage,
+      selectTrace,
+      connect,
+      disconnect,
+    }),
+    [
+      status,
+      messages,
+      traceEntries,
+      selectedTraceId,
+      sendUserMessage,
+      selectTrace,
+      connect,
+      disconnect,
+    ],
+  );
 
   return (
     <AgentContext.Provider value={value}>{children}</AgentContext.Provider>

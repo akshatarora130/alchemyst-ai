@@ -1,15 +1,31 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Panel } from "@/components/ui/panel";
 import { useAgent } from "@/providers/agent-provider";
+import { findTraceIdByCallId } from "@/lib/trace/filter-trace-entries";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
 
 export function ChatPanel() {
-  const { messages, sendUserMessage, status } = useAgent();
+  const {
+    messages,
+    traceEntries,
+    selectedTraceId,
+    sendUserMessage,
+    selectTrace,
+    status,
+  } = useAgent();
   const canSend = status === "connected";
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const highlightedCallId = useMemo(() => {
+    const selected = traceEntries.find((entry) => entry.id === selectedTraceId);
+    if (selected?.kind === "tool_call" || selected?.kind === "tool_result") {
+      return selected.callId;
+    }
+    return null;
+  }, [traceEntries, selectedTraceId]);
 
   useEffect(() => {
     const container = scrollRef.current;
@@ -19,6 +35,11 @@ export function ChatPanel() {
 
     container.scrollTop = container.scrollHeight;
   }, [messages]);
+
+  const handleToolSelect = (callId: string) => {
+    const traceId = findTraceIdByCallId(traceEntries, callId, "tool_call");
+    selectTrace(traceId);
+  };
 
   return (
     <Panel
@@ -31,7 +52,11 @@ export function ChatPanel() {
         ref={scrollRef}
         className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5"
       >
-        <MessageList messages={messages} />
+        <MessageList
+          messages={messages}
+          highlightedCallId={highlightedCallId}
+          onToolSelect={handleToolSelect}
+        />
       </div>
       <ChatInput onSend={sendUserMessage} disabled={!canSend} />
     </Panel>

@@ -21,3 +21,15 @@ export function setSeqProcessedHandler(
 export function notifySeqProcessed(seq: number): void {
   seqProcessedHandler?.(seq);
 }
+
+let pongSentHandler: ((echo: string) => void) | null = null;
+
+export function setPongSentHandler(
+  handler: ((echo: string) => void) | null,
+): void {
+  pongSentHandler = handler;
+}
+
+export function notifyPongSent(echo: string): void {
+  pongSentHandler?.(echo);
+}
