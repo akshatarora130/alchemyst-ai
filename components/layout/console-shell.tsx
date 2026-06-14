@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useConnection } from "@/providers/connection-provider";
+import { useConnection } from "@/providers/agent-provider";
 import { AppHeader } from "@/components/layout/app-header";
 import {
   MobilePanelTabs,

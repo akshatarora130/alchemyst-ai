@@ -1,0 +1,58 @@
+import type { ToolSegment } from "@/types/chat";
+
+interface ToolCallCardProps {
+  segment: ToolSegment;
+}
+
+export function ToolCallCard({ segment }: ToolCallCardProps) {
+  const argEntries = Object.entries(segment.args);
+
+  return (
+    <div className="rounded-md border border-zinc-700 bg-zinc-800 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium text-sky-400">{segment.toolName}</p>
+        <span
+          className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${
+            segment.status === "pending"
+              ? "bg-amber-500/20 text-amber-400"
+              : "bg-emerald-500/20 text-emerald-400"
+          }`}
+        >
+          {segment.status === "pending" ? "Running" : "Done"}
+        </span>
+      </div>
+
+      {argEntries.length > 0 ? (
+        <dl className="mt-2 space-y-1">
+          {argEntries.map(([key, value]) => (
+            <div key={key} className="text-xs">
+              <dt className="inline text-zinc-500">{key}: </dt>
+              <dd className="inline font-mono text-zinc-300">
+                {formatValue(value)}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+
+      {segment.result ? (
+        <div className="mt-2 border-t border-zinc-700 pt-2">
+          <p className="text-[10px] font-medium uppercase text-zinc-500">
+            Result
+          </p>
+          <pre className="mt-1 overflow-x-auto text-xs text-zinc-300">
+            {JSON.stringify(segment.result, null, 2)}
+          </pre>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function formatValue(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return JSON.stringify(value);
+}
