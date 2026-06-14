@@ -158,8 +158,13 @@ export const connectionMachine = setup({
   on: {
     UPDATE_LAST_SEQ: {
       actions: assign({
-        lastProcessedSeq: ({ event }) =>
-          event.type === "UPDATE_LAST_SEQ" ? event.seq : 0,
+        lastProcessedSeq: ({ context, event }) => {
+          if (event.type !== "UPDATE_LAST_SEQ") {
+            return context.lastProcessedSeq;
+          }
+
+          return Math.max(context.lastProcessedSeq, event.seq);
+        },
       }),
     },
   },

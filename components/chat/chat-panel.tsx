@@ -7,6 +7,7 @@ import { findTraceIdByCallId } from "@/lib/trace/filter-trace-entries";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatQuickPrompts } from "@/components/chat/chat-quick-prompts";
+import { ReconnectionBanner } from "@/components/chat/reconnection-banner";
 
 export function ChatPanel() {
   const {
@@ -16,8 +17,10 @@ export function ChatPanel() {
     sendUserMessage,
     selectTrace,
     status,
+    reconnectAttempt,
   } = useAgent();
   const canSend = status === "connected";
+  const showRecoveryBanner = status === "reconnecting";
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const highlightedCallId = useMemo(() => {
@@ -49,6 +52,9 @@ export function ChatPanel() {
       className="h-full"
       bodyClassName="flex flex-col overflow-hidden p-0"
     >
+      {showRecoveryBanner ? (
+        <ReconnectionBanner reconnectAttempt={reconnectAttempt} />
+      ) : null}
       <div
         ref={scrollRef}
         className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-5 sm:py-5"
@@ -57,6 +63,7 @@ export function ChatPanel() {
           messages={messages}
           highlightedCallId={highlightedCallId}
           onToolSelect={handleToolSelect}
+          isConnected={status === "connected"}
         />
       </div>
       <ChatQuickPrompts onSend={sendUserMessage} disabled={!canSend} />

@@ -6,12 +6,14 @@ interface MessageListProps {
   messages: ChatMessage[];
   highlightedCallId: string | null;
   onToolSelect: (callId: string) => void;
+  isConnected: boolean;
 }
 
 export function MessageList({
   messages,
   highlightedCallId,
   onToolSelect,
+  isConnected,
 }: MessageListProps) {
   if (messages.length === 0) {
     return (
@@ -32,6 +34,7 @@ export function MessageList({
             message={message}
             highlightedCallId={highlightedCallId}
             onToolSelect={onToolSelect}
+            isConnected={isConnected}
           />
         ),
       )}

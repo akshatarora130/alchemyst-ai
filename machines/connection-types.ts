@@ -28,8 +28,12 @@ export type WsConnectionEvent =
   | { type: "WS_MESSAGE"; raw: string };
 
 export function mapMachineStateToStatus(
-  stateValue: string | object,
+  snapshot: Pick<ConnectionContext, "shouldSendResume"> & {
+    value: string | object;
+  },
 ): ConnectionStatus {
+  const stateValue = snapshot.value;
+
   if (stateValue === "disconnected") {
     return "disconnected";
   }
@@ -39,7 +43,11 @@ export function mapMachineStateToStatus(
   }
 
   if (typeof stateValue === "object" && "active" in stateValue) {
-    return stateValue.active === "connected" ? "connected" : "connecting";
+    if (stateValue.active === "connected") {
+      return "connected";
+    }
+
+    return snapshot.shouldSendResume ? "reconnecting" : "connecting";
   }
 
   return "disconnected";

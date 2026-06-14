@@ -4,14 +4,18 @@ interface ToolCallCardProps {
   segment: ToolSegment;
   highlighted?: boolean;
   onSelect?: () => void;
+  isConnected?: boolean;
 }
 
 export function ToolCallCard({
   segment,
   highlighted = false,
   onSelect,
+  isConnected = true,
 }: ToolCallCardProps) {
   const argEntries = Object.entries(segment.args);
+  const statusLabel = getToolStatusLabel(segment.status, isConnected);
+  const statusStyle = getToolStatusStyle(segment.status, isConnected);
 
   return (
     <div
@@ -34,13 +38,9 @@ export function ToolCallCard({
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-medium text-sky-400">{segment.toolName}</p>
         <span
-          className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${
-            segment.status === "pending"
-              ? "bg-amber-500/20 text-amber-400"
-              : "bg-emerald-500/20 text-emerald-400"
-          }`}
+          className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${statusStyle}`}
         >
-          {segment.status === "pending" ? "Running" : "Done"}
+          {statusLabel}
         </span>
       </div>
 
@@ -69,6 +69,30 @@ export function ToolCallCard({
       ) : null}
     </div>
   );
+}
+
+function getToolStatusLabel(
+  status: ToolSegment["status"],
+  isConnected: boolean,
+): string {
+  if (status === "complete") {
+    return "Done";
+  }
+
+  return isConnected ? "Running" : "Waiting";
+}
+
+function getToolStatusStyle(
+  status: ToolSegment["status"],
+  isConnected: boolean,
+): string {
+  if (status === "complete") {
+    return "bg-emerald-500/20 text-emerald-400";
+  }
+
+  return isConnected
+    ? "bg-amber-500/20 text-amber-400"
+    : "bg-violet-500/20 text-violet-300";
 }
 
 function formatValue(value: unknown): string {

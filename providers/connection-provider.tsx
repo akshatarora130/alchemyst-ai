@@ -13,7 +13,7 @@ import type { ClientMessage } from "@/types/protocol";
 import { serializeClientMessage } from "@/lib/protocol/client-messages";
 import { sendOnActiveSocket } from "@/lib/websocket/active-socket";
 import { connectionMachine } from "@/machines/connection-machine";
-import { mapMachineStateToStatus } from "@/machines/connection-types";
+import { getConnectionDisplayState } from "@/lib/connection/display-state";
 
 interface ConnectionContextValue {
   status: ConnectionStatus;
@@ -36,7 +36,7 @@ export function ConnectionProvider({
 }: ConnectionProviderProps) {
   const actorRef = useActorRef(connectionMachine);
   const status = useSelector(actorRef, (snapshot) =>
-    mapMachineStateToStatus(snapshot.value),
+    getConnectionDisplayState(snapshot).status,
   );
 
   useEffect(() => {

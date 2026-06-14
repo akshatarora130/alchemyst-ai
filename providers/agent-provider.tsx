@@ -24,11 +24,13 @@ import {
   setSeqProcessedHandler,
 } from "@/lib/websocket/message-bridge";
 import { connectionMachine } from "@/machines/connection-machine";
-import { mapMachineStateToStatus } from "@/machines/connection-types";
+import { getConnectionDisplayState } from "@/lib/connection/display-state";
+import { useLingerTrue } from "@/hooks/use-linger-true";
 import { sessionMachine } from "@/machines/session-machine";
 
 interface AgentContextValue {
   status: ConnectionStatus;
+  reconnectAttempt: number;
   messages: ChatMessage[];
   traceEntries: TraceEntry[];
   selectedTraceId: string | null;
@@ -51,8 +53,16 @@ export function AgentProvider({ children }: AgentProviderProps) {
   const connectionRef = useActorRef(connectionMachine);
   const sessionRef = useActorRef(sessionMachine);
 
-  const status = useSelector(connectionRef, (snapshot) =>
-    mapMachineStateToStatus(snapshot.value),
+  const connectionDisplay = useSelector(connectionRef, (snapshot) =>
+    getConnectionDisplayState(snapshot),
+  );
+
+  const isRecovering = useLingerTrue(connectionDisplay.isRecovering, 2500);
+  const status = isRecovering ? "reconnecting" : connectionDisplay.status;
+
+  const reconnectAttempt = useSelector(
+    connectionRef,
+    (snapshot) => snapshot.context.reconnectAttempt,
   );
 
   const messages = useSelector(
@@ -147,6 +157,7 @@ export function AgentProvider({ children }: AgentProviderProps) {
   const value = useMemo(
     (): AgentContextValue => ({
       status,
+      reconnectAttempt,
       messages,
       traceEntries,
       selectedTraceId,
@@ -160,6 +171,7 @@ export function AgentProvider({ children }: AgentProviderProps) {
     }),
     [
       status,
+      reconnectAttempt,
       messages,
       traceEntries,
       selectedTraceId,

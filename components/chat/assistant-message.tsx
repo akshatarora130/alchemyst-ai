@@ -5,12 +5,14 @@ interface AssistantMessageProps {
   message: AssistantChatMessage;
   highlightedCallId: string | null;
   onToolSelect: (callId: string) => void;
+  isConnected: boolean;
 }
 
 export function AssistantMessage({
   message,
   highlightedCallId,
   onToolSelect,
+  isConnected,
 }: AssistantMessageProps) {
   return (
     <article className="flex justify-start">
@@ -38,6 +40,7 @@ export function AssistantMessage({
               segment={segment}
               highlighted={highlightedCallId === segment.callId}
               onSelect={() => onToolSelect(segment.callId)}
+              isConnected={isConnected}
             />
           );
         })}
