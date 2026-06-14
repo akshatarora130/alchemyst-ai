@@ -22,7 +22,7 @@ Protocol log: `curl -s http://localhost:4747/log`
 
 ## Chaos recording
 
-**[2026-06-14 17-09-03.mp4](./2026-06-14%2017-09-03.mp4)** — drop/resume, out-of-order tokens, rapid tools, large context, corrupt PING.
+https://github.com/user-attachments/assets/7a5248c6-ee2a-4d9f-a4b3-4d7febec9250
 
 ## Dev
 
